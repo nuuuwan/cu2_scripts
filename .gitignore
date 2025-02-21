@@ -1,3 +1,7 @@
+# custom
+src/cu2/secrets
+src/cu2/secrets/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
