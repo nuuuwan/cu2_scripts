@@ -78,10 +78,8 @@ class SetupDovecot:
                 "sudo mv /home/ec2-user/dovecot.conf /etc/dovecot/dovecot.conf",
                 "sudo mv /home/ec2-user/passwd /etc/dovecot/passwd",
                 "sudo chown root:root /etc/dovecot/dovecot.conf /etc/dovecot/passwd",
-                "sudo chmod 640 /etc/dovecot/passwd",  # Change permission to 640
-                # Ensure dovecot.conf has correct permissions
+                "sudo chmod 640 /etc/dovecot/passwd",
                 "sudo chmod 644 /etc/dovecot/dovecot.conf",
-                # Ensure correct ownership of /var/run/dovecot
                 "sudo chown -R dovecot:dovecot /var/run/dovecot",
                 "sudo cat /etc/dovecot/passwd",
             ]
