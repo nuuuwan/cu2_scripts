@@ -1,7 +1,4 @@
-import logging
 import time
-
-from passlib.hash import sha512_crypt
 
 from awsx import AWSInstance
 from cu2 import SecretAWS, SecretDomain
@@ -16,7 +13,6 @@ class SMTPServer(SetupDovecot, SetupPostfix, SendTestEmail, SetupSASLAuth):
         self.aws_instance = None
 
         self.smtp_port = "25"
-
         self.domain = SecretDomain.domain
 
         self.test_user = "test@" + self.domain

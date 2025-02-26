@@ -1,6 +1,5 @@
 import logging
 
-import colorama
 from passlib.hash import sha512_crypt
 
 

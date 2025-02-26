@@ -3,4 +3,4 @@
 from cu2.email_client import EmailClient
 from cu2.secrets import SecretAWS, SecretDomain, SecretTestUser
 from cu2.smtp_server import (SendTestEmail, SetupDovecot, SetupPostfix,
-                             SMTPServer)
+                             SetupSASLAuth, SMTPServer)

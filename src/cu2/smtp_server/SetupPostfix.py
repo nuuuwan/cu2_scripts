@@ -1,7 +1,5 @@
-import colorama
 
 from common import ConfigFile
-from cu2 import SecretDomain
 
 
 class SetupPostfix:
@@ -61,4 +59,6 @@ class SetupPostfix:
         )
 
     def check_postfix_logs(self):
-        self.aws_instance.execute_commands(["sudo tail -n 10 /var/log/maillog"])
+        self.aws_instance.execute_commands(
+            ["sudo tail -n 10 /var/log/maillog"]
+        )
