@@ -1,4 +1,6 @@
+import smtplib
 import time
+from email.mime.text import MIMEText
 
 import colorama
 from colorama import Fore
@@ -32,6 +34,7 @@ class ScriptSetupSMTP:
             "sudo yum update -y",
             "sudo yum install -y postfix",
             "sudo yum install -y sendmail sendmail-cf",
+            "sudo yum install -y telnet",
         ]
         self.aws_instance.execute_commands(commands)
 
@@ -64,6 +67,8 @@ class ScriptSetupSMTP:
                         "reject_unauth_destination",
                     ]
                 ),
+                relay_domains="proton.me",
+                relay_recipient_maps="hash:/etc/postfix/relay_recipients",
             )
         )
 
@@ -83,11 +88,19 @@ class ScriptSetupSMTP:
             ]
         )
 
+    def check_domains(self):
+        self.aws_instance.execute_commands(
+            [
+                "nslookup proton.me",
+                "nslookup -type=MX proton.me",
+            ]
+        )
+
     def check_postfix_logs(self):
         self.aws_instance.execute_commands(["sudo tail -n 10 /var/log/maillog"])
 
-    def send_test_email(self):
-        sender = "test@" + self.domain
+    def build_email_content(self):
+        sender = "test111@" + "gmail.com"
         recipient = SecretTestUser.email
         subject = f"Test at {time.ctime()}"
         body = subject
@@ -97,6 +110,10 @@ class ScriptSetupSMTP:
         email_file = "test_email.txt"
         with open(email_file, "w") as file:
             file.write(email_content)
+        return email_file, sender, recipient
+
+    def send_test_email_internal(self):
+        email_file, sender, recipient = self.build_email_content()
         self.aws_instance.upload_file(
             email_file, "/home/ec2-user/test_email.txt"
         )
@@ -112,13 +129,35 @@ class ScriptSetupSMTP:
         except Exception as e:
             print(f"{Fore.RED}Failed to send test email: {e}")
 
+    def send_test_email_external(self):
+        sender = "test@" + self.domain
+        recipient = SecretTestUser.email
+        subject = f"Test at {time.ctime()}"
+        body = "This is a test email sent from the external SMTP client."
+
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = sender
+        msg["To"] = recipient
+
+        try:
+            with smtplib.SMTP(
+                self.aws_instance.public_ip, self.smtp_port
+            ) as server:
+                server.set_debuglevel(1)  # Enable debug output
+                server.sendmail(sender, [recipient], msg.as_string())
+            print(f"{Fore.GREEN}Test email sent successfully to {recipient}")
+        except Exception as e:
+            print(f"{Fore.RED}Failed to send test email: {e}")
+
     def run(self):
         self.update_system()
         self.create_main_cf()
         self.copy_main_cf_to_instance()
         self.start_postfix()
+        self.check_domains()
         self.check_postfix_logs()
-        self.send_test_email()
+        self.send_test_email_external()
         time.sleep(10)
         self.check_postfix_logs()
 

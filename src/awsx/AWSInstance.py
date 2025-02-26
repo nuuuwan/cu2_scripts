@@ -1,3 +1,5 @@
+import os
+
 import boto3  # AWS SDK for Python to interact with AWS services
 import paramiko  # Library for making SSH connections to remote machines
 from colorama import Fore, Style
@@ -74,3 +76,4 @@ class AWSInstance:
         sftp.put(local_path, remote_path)
         sftp.close()
         print(f"✅ Uploaded {local_path} to {remote_path}.")
+        os.remove(local_path)
