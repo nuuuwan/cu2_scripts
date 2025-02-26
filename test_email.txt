@@ -1,0 +1,5 @@
+Subject: Test Email
+From: test@e2ude.com
+To: lanka_elections@proton.me
+
+This is a test email from the SMTP server, sent at Wed Feb 26 11:28:17 2025
