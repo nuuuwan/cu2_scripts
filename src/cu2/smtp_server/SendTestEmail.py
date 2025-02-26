@@ -9,14 +9,6 @@ from cu2 import SecretTestUser
 
 
 class SendTestEmail:
-    def __init__(self, aws_instance):
-
-        self.aws_instance = aws_instance
-
-        self.smtp_port = "22"
-
-        self.test_user = "test@e2ude.com"
-        self.test_password = "password123"
 
     def send_test_email_external(self):
         sender = self.test_user

@@ -5,16 +5,6 @@ from cu2 import SecretDomain
 
 
 class SetupPostfix:
-    def __init__(self, aws_instance):
-
-        self.aws_instance = aws_instance
-
-        self.smtp_port = "25"
-        self.hostname = "localhost"
-        self.domain = SecretDomain.domain
-        self.mydestination = "$myhostname, localhost.$mydomain, localhost"
-
-        colorama.init(autoreset=True)
 
     def install_postfix(self):
         self.aws_instance.execute_commands(["sudo yum install -y postfix"])

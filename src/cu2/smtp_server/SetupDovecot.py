@@ -5,19 +5,6 @@ from passlib.hash import sha512_crypt
 
 
 class SetupDovecot:
-    def __init__(self, aws_instance):
-
-        self.aws_instance = aws_instance
-
-        self.dovecot_conf = "/etc/dovecot/dovecot.conf"
-        self.passwd_file = "/etc/dovecot/passwd"
-
-        self.test_user = "test@e2ude.com"
-        self.test_password = "password123"
-        self.hashed_test_password = sha512_crypt.hash(self.test_password)
-        logging.info(f"Hashed test password: {self.hashed_test_password}")
-
-        colorama.init(autoreset=True)
 
     def install_dovecot(self):
 
@@ -28,13 +15,13 @@ class SetupDovecot:
         )
 
     def create_dovecot_conf(self):
-        dovecot_conf_content = (
-            """
+
+        dovecot_conf_content = """
         protocols = imap pop3 lmtp
         mail_location = maildir:~/Maildir
         passdb {
           driver = passwd-file
-          args = %s
+          args = /etc/dovecot/passwd
         }
         userdb {
           driver = passwd
@@ -54,15 +41,13 @@ class SetupDovecot:
           user = root
         }
         """
-            % self.passwd_file
-        )
 
         with open("dovecot.conf", "w") as file:
             file.write(dovecot_conf_content)
 
     def create_passwd_file(self):
-
-        passwd_content = f"{self.test_user}:{self.hashed_test_password}\n"
+        hashed_test_password = sha512_crypt.hash(self.test_password)
+        passwd_content = f"{self.test_user}:{hashed_test_password}\n"
         logging.info(f"Passwd file content: {passwd_content}")
 
         with open("passwd", "w") as file:
