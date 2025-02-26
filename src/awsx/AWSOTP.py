@@ -3,7 +3,7 @@ import random
 
 import boto3
 
-from cu2 import SecretAWS
+from cu2.secrets import SecretAWS
 
 
 class AWSOTP:

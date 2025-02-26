@@ -1,5 +1,5 @@
 from awsx import AWSInstance
-from cu2 import SecretAWS, SecretDomain
+from cu2.secrets import SecretAWS, SecretDomain
 from cu2.smtp_server.SendMail import SendMail
 from cu2.smtp_server.SetupDovecot import SetupDovecot
 from cu2.smtp_server.SetupPostfix import SetupPostfix
