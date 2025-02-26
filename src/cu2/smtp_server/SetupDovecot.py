@@ -105,7 +105,8 @@ class SetupDovecot:
             ]
         )
 
-    def add_user_to_passwd(self, username, password):
+    def add_user(self, username, password):
+
         hashed_password = sha512_crypt.hash(password)
         new_user_entry = f"{username}:{hashed_password}\n"
         logging.info(f"Adding user to passwd file: {new_user_entry}")

@@ -1,24 +1,21 @@
-import time
-
 from awsx import AWSInstance
 from cu2 import SecretAWS, SecretDomain
-from cu2.smtp_server.SendTestEmail import SendTestEmail
+from cu2.smtp_server.SendMail import SendMail
 from cu2.smtp_server.SetupDovecot import SetupDovecot
 from cu2.smtp_server.SetupPostfix import SetupPostfix
 from cu2.smtp_server.SetupSASLAuth import SetupSASLAuth
 
 
-class SMTPServer(SetupDovecot, SetupPostfix, SendTestEmail, SetupSASLAuth):
+class SMTPServer(SetupDovecot, SetupPostfix, SendMail, SetupSASLAuth):
     def __init__(self):
         self.aws_instance = None
 
         self.smtp_port = "25"
         self.domain = SecretDomain.domain
 
-        self.test_user = "test123@" + self.domain
-        self.test_password = "password345"
+        self.aws_setup()
 
-    def run(self):
+    def aws_setup(self):
         self.aws_instance = AWSInstance(
             SecretAWS.aws_access_key,
             SecretAWS.aws_secret_key,
@@ -26,6 +23,8 @@ class SMTPServer(SetupDovecot, SetupPostfix, SendTestEmail, SetupSASLAuth):
             SecretAWS.pem_file_path,
             SecretAWS.region,
         )
+
+    def setup(self):
 
         self.install_postfix()
         self.install_dovecot()
@@ -43,9 +42,4 @@ class SMTPServer(SetupDovecot, SetupPostfix, SendTestEmail, SetupSASLAuth):
         self.start_postfix()
         self.start_dovecot()
 
-        self.add_user_to_passwd(self.test_user, self.test_password)
-
-        self.check_postfix_logs()
-        self.send_test_email_external()
-        time.sleep(10)
         self.check_postfix_logs()
