@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 
 import colorama
 from colorama import Fore
+from passlib.hash import sha512_crypt
 
 from awsx import AWSInstance
 from common import ConfigFile
@@ -27,6 +28,7 @@ class ScriptSetupSMTP:
         self.mydestination = "$myhostname, localhost.$mydomain, localhost"
         self.dovecot_conf = "/etc/dovecot/dovecot.conf"
         self.passwd_file = "/etc/dovecot/passwd"
+
         self.test_user = "test@e2ude.com"
         self.test_password = "password123"
 
@@ -98,11 +100,8 @@ class ScriptSetupSMTP:
             file.write(dovecot_conf_content)
 
     def create_passwd_file(self):
-        import crypt
 
-        hashed_password = crypt.crypt(
-            self.test_password, crypt.mksalt(crypt.METHOD_SHA512)
-        )
+        hashed_password = sha512_crypt.hash(self.test_password)
         passwd_content = f"{self.test_user}:{hashed_password}\n"
 
         with open("passwd", "w") as file:
@@ -154,7 +153,7 @@ class ScriptSetupSMTP:
         self.aws_instance.execute_commands(["sudo tail -n 10 /var/log/maillog"])
 
     def build_email_content(self):
-        sender = "test111@" + "gmail.com"
+        sender = self.test_user
         recipient = SecretTestUser.email
         subject = f"Test at {time.ctime()}"
         body = subject
@@ -184,7 +183,7 @@ class ScriptSetupSMTP:
             print(f"{Fore.RED}Failed to send test email: {e}")
 
     def send_test_email_external(self):
-        sender = "test@" + self.domain
+        sender = self.test_user
         recipient = SecretTestUser.email
         subject = f"Test at {time.ctime()}"
         body = "This is a test email sent from the external SMTP client."
