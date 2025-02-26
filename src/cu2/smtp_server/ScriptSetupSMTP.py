@@ -152,36 +152,6 @@ class ScriptSetupSMTP:
     def check_postfix_logs(self):
         self.aws_instance.execute_commands(["sudo tail -n 10 /var/log/maillog"])
 
-    def build_email_content(self):
-        sender = self.test_user
-        recipient = SecretTestUser.email
-        subject = f"Test at {time.ctime()}"
-        body = subject
-        email_content = (
-            f"Subject: {subject}\nFrom: {sender}\nTo: {recipient}\n\n{body}"
-        )
-        email_file = "test_email.txt"
-        with open(email_file, "w") as file:
-            file.write(email_content)
-        return email_file, sender, recipient
-
-    def send_test_email_internal(self):
-        email_file, sender, recipient = self.build_email_content()
-        self.aws_instance.upload_file(
-            email_file, "/home/ec2-user/test_email.txt"
-        )
-
-        try:
-            self.aws_instance.execute_commands(
-                [
-                    f"sudo sendmail -f {sender} {recipient} < /home/ec2-user/test_email.txt",
-                    "rm /home/ec2-user/test_email.txt",
-                ]
-            )
-            print(f"{Fore.GREEN}Test email sent successfully to {recipient}")
-        except Exception as e:
-            print(f"{Fore.RED}Failed to send test email: {e}")
-
     def send_test_email_external(self):
         sender = self.test_user
         recipient = SecretTestUser.email
@@ -198,6 +168,9 @@ class ScriptSetupSMTP:
                 self.aws_instance.public_ip, self.smtp_port
             ) as server:
                 server.set_debuglevel(1)  # Enable debug output
+                server.login(
+                    self.test_user, self.test_password
+                )  # Authenticate user
                 server.sendmail(sender, [recipient], msg.as_string())
             print(f"{Fore.GREEN}Test email sent successfully to {recipient}")
         except Exception as e:
