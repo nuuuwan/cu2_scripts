@@ -11,5 +11,8 @@ from cu2.secrets import (
 )
 
 from cu2.smtp_server import (
-    SetupSMTP,
+    SendTestEmail,
+    SetupDovecot,
+    SetupPostfix,
+    SMTPServer,
 )
