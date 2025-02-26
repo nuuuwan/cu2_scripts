@@ -1,15 +1,13 @@
 # Python script that setups an SMTP server on an AWS instance
 import os
-import smtplib
 import time
-from email.mime.text import MIMEText
 
 import boto3  # AWS SDK for Python to interact with AWS services
 import colorama
 import paramiko  # Library for making SSH connections to remote machines
 from colorama import Fore, Style
 
-from cu2.secrets import SecretAWS, SecretDomain, SecretTestUser
+from cu2 import SecretAWS, SecretDomain, SecretTestUser
 
 
 class ScriptSetupSMTP:
@@ -41,7 +39,8 @@ class ScriptSetupSMTP:
         self.mydestination = "$myhostname, localhost.$mydomain, localhost"
 
     def connect_to_instance(self):
-        # Connect to the AWS EC2 instance using provided credentials and PEM file
+        # Connect to the AWS EC2 instance using provided credentials and PEM
+        # file
         ec2 = boto3.client(
             "ec2",
             aws_access_key_id=self.aws_access_key,
