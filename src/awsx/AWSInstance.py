@@ -1,8 +1,8 @@
+import logging
 import os
 
 import boto3  # AWS SDK for Python to interact with AWS services
 import paramiko  # Library for making SSH connections to remote machines
-from colorama import Fore, Style
 
 
 class AWSInstance:
@@ -27,10 +27,10 @@ class AWSInstance:
     def __del__(self):
         if self.ssh:
             self.ssh.close()
-            print("✅ SSH connection closed.")
+            logging.info("✅ SSH connection closed.")
 
     def connect(self):
-        print("Connecting to the AWS instance...")
+        logging.info("Connecting to the AWS instance...")
         ec2 = boto3.client(
             "ec2",
             aws_access_key_id=self.aws_access_key,
@@ -43,13 +43,13 @@ class AWSInstance:
         ).get("Reservations")
         instance = reservations[0]["Instances"][0]
         self.public_ip = instance["PublicIpAddress"]  # Store public IP
-        print(f"✅ Connected to AWS instance on {self.public_ip}.")
+        logging.info(f"✅ Connected to AWS instance on {self.public_ip}.")
 
         key = paramiko.RSAKey.from_private_key_file(self.pem_file_path)
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(self.public_ip, username="ec2-user", pkey=key)
-        print("✅ SSH connection established.")
+        logging.info("✅ SSH connection established.")
 
     def clean(self, s):
         lines = s.split("\n")
@@ -57,15 +57,15 @@ class AWSInstance:
         return "\n".join([line for line in lines if line])
 
     def execute_command(self, command):
-        print(f"> {Fore.GREEN}{Style.BRIGHT}{command}")
+        logging.info(f"> {command}")
         ___, stdout, stderr = self.ssh.exec_command(command)
         str_out = self.clean(stdout.read().decode())
         if str_out:
-            print(f"{Fore.BLUE}{str_out}")
+            logging.info(f"{str_out}")
         str_err = self.clean(stderr.read().decode())
         if str_err:
-            print(f"{Fore.RED}{str_err}")
-        print("...")
+            logging.error(f"{str_err}")
+        logging.info("...")
 
     def execute_commands(self, commands):
         for command in commands:
@@ -75,5 +75,5 @@ class AWSInstance:
         sftp = self.ssh.open_sftp()
         sftp.put(local_path, remote_path)
         sftp.close()
-        print(f"✅ Uploaded {local_path} to {remote_path}.")
+        logging.info(f"✅ Uploaded {local_path} to {remote_path}.")
         os.remove(local_path)

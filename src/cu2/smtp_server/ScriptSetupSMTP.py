@@ -1,3 +1,4 @@
+import logging
 import smtplib
 import time
 from email.mime.text import MIMEText
@@ -31,6 +32,8 @@ class ScriptSetupSMTP:
 
         self.test_user = "test@e2ude.com"
         self.test_password = "password123"
+        self.hashed_test_password = sha512_crypt.hash(self.test_password)
+        logging.info(f"Hashed test password: {self.hashed_test_password}")
 
         colorama.init(autoreset=True)
 
@@ -71,6 +74,12 @@ class ScriptSetupSMTP:
                         "reject_unauth_destination",
                     ]
                 ),
+                smtpd_sasl_auth_enable="yes",
+                smtpd_sasl_security_options="noanonymous",
+                smtpd_sasl_local_domain="",
+                broken_sasl_auth_clients="yes",
+                smtpd_sasl_type="dovecot",
+                smtpd_sasl_path="private/auth",
             )
         )
 
@@ -92,6 +101,20 @@ class ScriptSetupSMTP:
         userdb {
           driver = passwd
         }
+        auth_mechanisms = plain login
+        service auth {
+          unix_listener /var/spool/postfix/private/auth {
+            mode = 0660
+            user = postfix
+            group = postfix
+          }
+          unix_listener auth-userdb {
+            mode = 0600
+            user = dovecot
+            group = dovecot
+          }
+          user = root
+        }
         """
             % self.passwd_file
         )
@@ -101,8 +124,8 @@ class ScriptSetupSMTP:
 
     def create_passwd_file(self):
 
-        hashed_password = sha512_crypt.hash(self.test_password)
-        passwd_content = f"{self.test_user}:{hashed_password}\n"
+        passwd_content = f"{self.test_user}:{self.hashed_test_password}\n"
+        logging.info(f"Passwd file content: {passwd_content}")
 
         with open("passwd", "w") as file:
             file.write(passwd_content)
@@ -117,7 +140,37 @@ class ScriptSetupSMTP:
                 "sudo mv /home/ec2-user/dovecot.conf /etc/dovecot/dovecot.conf",
                 "sudo mv /home/ec2-user/passwd /etc/dovecot/passwd",
                 "sudo chown root:root /etc/dovecot/dovecot.conf /etc/dovecot/passwd",
-                "sudo chmod 600 /etc/dovecot/passwd",
+                "sudo chmod 640 /etc/dovecot/passwd",  # Change permission to 640
+                "sudo chmod 644 /etc/dovecot/dovecot.conf",  # Ensure dovecot.conf has correct permissions
+                "sudo chown -R dovecot:dovecot /var/run/dovecot",  # Ensure correct ownership of /var/run/dovecot
+                "sudo cat /etc/dovecot/passwd",
+            ]
+        )
+
+    def configure_sasl_auth(self):
+        sasl_auth_content = """
+        auth_mechanisms = plain login
+        service auth {
+          unix_listener /var/spool/postfix/private/auth {
+            mode = 0660
+            user = postfix
+            group = postfix
+          }
+        }
+        """
+
+        with open("sasl_auth.conf", "w") as file:
+            file.write(sasl_auth_content)
+
+    def copy_sasl_auth_to_instance(self):
+        self.aws_instance.upload_file(
+            "sasl_auth.conf", "/home/ec2-user/sasl_auth.conf"
+        )
+        self.aws_instance.execute_commands(
+            [
+                "sudo mv /home/ec2-user/sasl_auth.conf /etc/dovecot/conf.d/10-auth.conf",
+                "sudo chown root:root /etc/dovecot/conf.d/10-auth.conf",
+                "sudo chmod 644 /etc/dovecot/conf.d/10-auth.conf",
             ]
         )
 
@@ -134,6 +187,8 @@ class ScriptSetupSMTP:
     def start_dovecot(self):
         self.aws_instance.execute_commands(
             [
+                "sudo mkdir -p /var/run/dovecot",  # Create the directory if it doesn't exist
+                "sudo chown dovecot:dovecot /var/run/dovecot",  # Set the correct ownership
                 "sudo systemctl stop dovecot",
                 "sudo systemctl start dovecot",
                 "sudo systemctl enable dovecot",
@@ -162,7 +217,7 @@ class ScriptSetupSMTP:
         msg["Subject"] = subject
         msg["From"] = sender
         msg["To"] = recipient
-        print(msg)
+        logging.info(msg)
         try:
             with smtplib.SMTP(
                 self.aws_instance.public_ip, self.smtp_port
@@ -172,9 +227,15 @@ class ScriptSetupSMTP:
                     self.test_user, self.test_password
                 )  # Authenticate user
                 server.sendmail(sender, [recipient], msg.as_string())
-            print(f"{Fore.GREEN}Test email sent successfully to {recipient}")
+            logging.info(
+                f"{Fore.GREEN}Test email sent successfully to {recipient}"
+            )
+        except smtplib.SMTPAuthenticationError as e:
+            logging.info(f"{Fore.RED}SMTP Authentication Error: {e}")
+            logging.error(f"SMTP Authentication Error: {e}")
         except Exception as e:
-            print(f"{Fore.RED}Failed to send test email: {e}")
+            logging.info(f"{Fore.RED}Failed to send test email: {e}")
+            logging.error(f"Failed to send test email: {e}")
 
     def run(self):
         self.update_system()
@@ -183,6 +244,8 @@ class ScriptSetupSMTP:
         self.create_dovecot_conf()
         self.create_passwd_file()
         self.copy_dovecot_files_to_instance()
+        self.configure_sasl_auth()
+        self.copy_sasl_auth_to_instance()
         self.start_postfix()
         self.start_dovecot()
         self.check_domains()
@@ -193,4 +256,5 @@ class ScriptSetupSMTP:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(filename="smtp_setup.log", level=logging.INFO)
     ScriptSetupSMTP().run()

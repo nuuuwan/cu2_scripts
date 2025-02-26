@@ -1,3 +1,6 @@
+import logging
+
+
 class EmailClient:
 
     def normalize_phone_num(self, phone_num):
@@ -12,23 +15,23 @@ class EmailClient:
     def input_phone_num(self):
         raw_phone_num = input("Enter your phone number: ")
         normalized_phone_num = self.normalize_phone_num(raw_phone_num)
-        print("Normalized phone number: ", normalized_phone_num)
+        logging.info("Normalized phone number: ", normalized_phone_num)
         return normalized_phone_num
 
     def input_otp(self):
         return input("Enter the OTP: ")
 
     def login(self, phone_num, otp):
-        print("Logging in...")
+        logging.info("Logging in...")
 
     def input_message(self):
         return input("Enter the message: ")
 
     def send_message(self, email, message):
-        print(f'Sending message "{message}" from {email}...')
+        logging.info(f'Sending message "{message}" from {email}...')
 
     def logout(self):
-        print("Logging out...")
+        logging.info("Logging out...")
 
     def run(self):
         phone_num = self.input_phone_num()
