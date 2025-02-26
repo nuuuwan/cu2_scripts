@@ -1,6 +1,3 @@
-
-
-
 class SetupSASLAuth:
 
     def configure_sasl_auth(self):

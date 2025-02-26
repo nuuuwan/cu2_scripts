@@ -45,12 +45,9 @@ class SetupDovecot:
             file.write(dovecot_conf_content)
 
     def create_passwd_file(self):
-        hashed_test_password = sha512_crypt.hash(self.test_password)
-        passwd_content = f"{self.test_user}:{hashed_test_password}\n"
-        logging.info(f"Passwd file content: {passwd_content}")
 
         with open("passwd", "w") as file:
-            file.write(passwd_content)
+            file.write("")
 
     def copy_dovecot_files_to_instance(self):
         self.aws_instance.upload_file(
@@ -99,11 +96,29 @@ class SetupDovecot:
     def start_dovecot(self):
         self.aws_instance.execute_commands(
             [
-                "sudo mkdir -p /var/run/dovecot",  # Create the directory if it doesn't exist
-                "sudo chown dovecot:dovecot /var/run/dovecot",  # Set the correct ownership
+                "sudo mkdir -p /var/run/dovecot",
+                "sudo chown dovecot:dovecot /var/run/dovecot",
                 "sudo systemctl stop dovecot",
                 "sudo systemctl start dovecot",
                 "sudo systemctl enable dovecot",
                 "sudo systemctl status dovecot",
+            ]
+        )
+
+    def add_user_to_passwd(self, username, password):
+        hashed_password = sha512_crypt.hash(password)
+        new_user_entry = f"{username}:{hashed_password}\n"
+        logging.info(f"Adding user to passwd file: {new_user_entry}")
+
+        with open("passwd", "a") as file:
+            file.write(new_user_entry)
+
+        self.aws_instance.upload_file("passwd", "/home/ec2-user/passwd")
+        self.aws_instance.execute_commands(
+            [
+                "sudo mv /home/ec2-user/passwd /etc/dovecot/passwd",
+                "sudo chown root:root /etc/dovecot/passwd",
+                "sudo chmod 640 /etc/dovecot/passwd",
+                "sudo systemctl reload dovecot",
             ]
         )

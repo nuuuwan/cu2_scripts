@@ -15,8 +15,8 @@ class SMTPServer(SetupDovecot, SetupPostfix, SendTestEmail, SetupSASLAuth):
         self.smtp_port = "25"
         self.domain = SecretDomain.domain
 
-        self.test_user = "test@" + self.domain
-        self.test_password = "password123"
+        self.test_user = "test123@" + self.domain
+        self.test_password = "password345"
 
     def run(self):
         self.aws_instance = AWSInstance(
@@ -42,6 +42,9 @@ class SMTPServer(SetupDovecot, SetupPostfix, SendTestEmail, SetupSASLAuth):
 
         self.start_postfix()
         self.start_dovecot()
+
+        self.add_user_to_passwd(self.test_user, self.test_password)
+
         self.check_postfix_logs()
         self.send_test_email_external()
         time.sleep(10)
