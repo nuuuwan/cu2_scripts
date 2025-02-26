@@ -65,7 +65,6 @@ class AWSInstance:
         str_err = self.clean(stderr.read().decode())
         if str_err:
             logging.error(f"{str_err}")
-        logging.info("...")
 
     def execute_commands(self, commands):
         for command in commands:
