@@ -16,7 +16,7 @@ class SMTPServer(SetupDovecot, SetupPostfix, SendTestEmail, SetupSASLAuth):
         self.aws_instance = None
 
         self.smtp_port = "25"
-        self.hostname = "localhost"
+
         self.domain = SecretDomain.domain
 
         self.test_user = "test@" + self.domain

@@ -13,7 +13,7 @@ class SetupPostfix:
         ConfigFile("main.cf").write(
             dict(
                 inet_interfaces="all",
-                myhostname=self.hostname,
+                myhostname="localhost",
                 mydomain=self.domain,
                 myorigin="$mydomain",
                 mynetworks_style="host",
