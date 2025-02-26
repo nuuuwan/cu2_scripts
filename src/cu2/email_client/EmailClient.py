@@ -32,7 +32,7 @@ class EmailClient:
 
     def run(self):
         phone_num = self.input_phone_num()
-        email = f"{phone_num}@mail.lk"
+        email = f"{phone_num}@mail.org"
         otp = self.input_otp()
         self.login(phone_num, otp)
         message = self.input_message()
