@@ -7,21 +7,14 @@ import colorama
 from colorama import Fore
 from passlib.hash import sha512_crypt
 
-from awsx import AWSInstance
 from common import ConfigFile
-from cu2 import SecretAWS, SecretDomain, SecretTestUser
+from cu2 import SecretDomain, SecretTestUser
 
 
-class ScriptSetupSMTP:
-    def __init__(self):
+class SetupSMTP:
+    def __init__(self, aws_instance):
 
-        self.aws_instance = AWSInstance(
-            SecretAWS.aws_access_key,
-            SecretAWS.aws_secret_key,
-            SecretAWS.instance_id,
-            SecretAWS.pem_file_path,
-            SecretAWS.region,
-        )
+        self.aws_instance = aws_instance
 
         self.smtp_port = "25"
         self.hostname = "localhost"
@@ -141,8 +134,10 @@ class ScriptSetupSMTP:
                 "sudo mv /home/ec2-user/passwd /etc/dovecot/passwd",
                 "sudo chown root:root /etc/dovecot/dovecot.conf /etc/dovecot/passwd",
                 "sudo chmod 640 /etc/dovecot/passwd",  # Change permission to 640
-                "sudo chmod 644 /etc/dovecot/dovecot.conf",  # Ensure dovecot.conf has correct permissions
-                "sudo chown -R dovecot:dovecot /var/run/dovecot",  # Ensure correct ownership of /var/run/dovecot
+                # Ensure dovecot.conf has correct permissions
+                "sudo chmod 644 /etc/dovecot/dovecot.conf",
+                # Ensure correct ownership of /var/run/dovecot
+                "sudo chown -R dovecot:dovecot /var/run/dovecot",
                 "sudo cat /etc/dovecot/passwd",
             ]
         )
@@ -205,7 +200,9 @@ class ScriptSetupSMTP:
         )
 
     def check_postfix_logs(self):
-        self.aws_instance.execute_commands(["sudo tail -n 10 /var/log/maillog"])
+        self.aws_instance.execute_commands(
+            ["sudo tail -n 10 /var/log/maillog"]
+        )
 
     def send_test_email_external(self):
         sender = self.test_user
@@ -253,15 +250,3 @@ class ScriptSetupSMTP:
         self.send_test_email_external()
         time.sleep(10)
         self.check_postfix_logs()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(filename="smtp_setup.log", level=logging.INFO)
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter(
-        "[%(asctime)s][%(name)s][%(levelname)s] %(message)s"
-    )
-    console_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(console_handler)
-    ScriptSetupSMTP().run()
