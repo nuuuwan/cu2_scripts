@@ -47,13 +47,10 @@ class ScriptSetupSMTP:
                 myorigin="$mydomain",
                 mynetworks_style="host",
                 home_mailbox="Maildir/",
-                smtp_use_tls="yes",
+                smtp_use_tls="no",
                 smtp_tls_security_level="may",
                 smtp_tls_note_starttls_offer="yes",
                 smtpd_banner="$myhostname ESMTP $mail_name ($mail_version)",
-                smtpd_tls_cert_file="",
-                smtpd_tls_key_file="",
-                smtpd_tls_CAfile="",
                 smtpd_tls_security_level="may",
                 smtpd_tls_auth_only="no",
                 smtpd_tls_received_header="yes",
@@ -67,8 +64,6 @@ class ScriptSetupSMTP:
                         "reject_unauth_destination",
                     ]
                 ),
-                relay_domains="proton.me",
-                relay_recipient_maps="hash:/etc/postfix/relay_recipients",
             )
         )
 
@@ -139,7 +134,7 @@ class ScriptSetupSMTP:
         msg["Subject"] = subject
         msg["From"] = sender
         msg["To"] = recipient
-
+        print(msg)
         try:
             with smtplib.SMTP(
                 self.aws_instance.public_ip, self.smtp_port
