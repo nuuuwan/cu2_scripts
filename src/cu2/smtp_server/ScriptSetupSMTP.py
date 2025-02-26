@@ -25,6 +25,10 @@ class ScriptSetupSMTP:
         self.hostname = "localhost"
         self.domain = SecretDomain.domain
         self.mydestination = "$myhostname, localhost.$mydomain, localhost"
+        self.dovecot_conf = "/etc/dovecot/dovecot.conf"
+        self.passwd_file = "/etc/dovecot/passwd"
+        self.test_user = "test@e2ude.com"
+        self.test_password = "password123"
 
         colorama.init(autoreset=True)
 
@@ -33,6 +37,7 @@ class ScriptSetupSMTP:
         commands = [
             "sudo yum update -y",
             "sudo yum install -y postfix",
+            "sudo yum install -y dovecot",
             "sudo yum install -y sendmail sendmail-cf",
             "sudo yum install -y telnet",
         ]
@@ -73,6 +78,50 @@ class ScriptSetupSMTP:
             ["sudo mv /home/ec2-user/main.cf /etc/postfix/main.cf"]
         )
 
+    def create_dovecot_conf(self):
+        dovecot_conf_content = (
+            """
+        protocols = imap pop3 lmtp
+        mail_location = maildir:~/Maildir
+        passdb {
+          driver = passwd-file
+          args = %s
+        }
+        userdb {
+          driver = passwd
+        }
+        """
+            % self.passwd_file
+        )
+
+        with open("dovecot.conf", "w") as file:
+            file.write(dovecot_conf_content)
+
+    def create_passwd_file(self):
+        import crypt
+
+        hashed_password = crypt.crypt(
+            self.test_password, crypt.mksalt(crypt.METHOD_SHA512)
+        )
+        passwd_content = f"{self.test_user}:{hashed_password}\n"
+
+        with open("passwd", "w") as file:
+            file.write(passwd_content)
+
+    def copy_dovecot_files_to_instance(self):
+        self.aws_instance.upload_file(
+            "dovecot.conf", "/home/ec2-user/dovecot.conf"
+        )
+        self.aws_instance.upload_file("passwd", "/home/ec2-user/passwd")
+        self.aws_instance.execute_commands(
+            [
+                "sudo mv /home/ec2-user/dovecot.conf /etc/dovecot/dovecot.conf",
+                "sudo mv /home/ec2-user/passwd /etc/dovecot/passwd",
+                "sudo chown root:root /etc/dovecot/dovecot.conf /etc/dovecot/passwd",
+                "sudo chmod 600 /etc/dovecot/passwd",
+            ]
+        )
+
     def start_postfix(self):
         self.aws_instance.execute_commands(
             [
@@ -80,6 +129,16 @@ class ScriptSetupSMTP:
                 "sudo systemctl start postfix",
                 "sudo systemctl enable postfix",
                 "sudo systemctl status postfix",
+            ]
+        )
+
+    def start_dovecot(self):
+        self.aws_instance.execute_commands(
+            [
+                "sudo systemctl stop dovecot",
+                "sudo systemctl start dovecot",
+                "sudo systemctl enable dovecot",
+                "sudo systemctl status dovecot",
             ]
         )
 
@@ -149,7 +208,11 @@ class ScriptSetupSMTP:
         self.update_system()
         self.create_main_cf()
         self.copy_main_cf_to_instance()
+        self.create_dovecot_conf()
+        self.create_passwd_file()
+        self.copy_dovecot_files_to_instance()
         self.start_postfix()
+        self.start_dovecot()
         self.check_domains()
         self.check_postfix_logs()
         self.send_test_email_external()
